@@ -1,0 +1,1087 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contribution Board</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #ffffff;
+    --bg-secondary: #f6f8fa;
+    --bg-tertiary: #eaeef2;
+    --text: #1f2328;
+    --text-muted: #636c76;
+    --text-subtle: #9198a1;
+    --border: #d0d7de;
+    --border-light: #e8ecf0;
+    --cell-empty: #ebedf0;
+    --radius: 8px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --bg-secondary: #161b22;
+      --bg-tertiary: #21262d;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --text-subtle: #6e7681;
+      --border: #30363d;
+      --border-light: #21262d;
+      --cell-empty: #161b22;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.04);
+    }
+  }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px 20px;
+    font-size: 14px;
+  }
+
+  .container { max-width: 900px; margin: 0 auto; }
+
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .header-left h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 2px;
+  }
+
+  .header-left p {
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.12s, border-color 0.12s;
+    text-decoration: none;
+  }
+  .btn:hover { background: var(--bg-secondary); }
+  .btn-primary {
+    background: #238636;
+    border-color: #238636;
+    color: #fff;
+  }
+  .btn-primary:hover { background: #2ea043; border-color: #2ea043; }
+  .btn-ghost {
+    border-color: transparent;
+    background: transparent;
+    color: var(--text-muted);
+  }
+  .btn-ghost:hover { background: var(--bg-secondary); color: var(--text); }
+
+  .board-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px 16px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+  }
+
+  .board-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .board-stats { font-size: 13px; color: var(--text-muted); }
+  .board-stats strong { color: var(--text); font-weight: 600; }
+
+  .board-controls { display: flex; align-items: center; gap: 8px; }
+
+  .year-tabs {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+
+  .year-tab {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    transition: all 0.12s;
+  }
+  .year-tab:hover { background: var(--bg-secondary); color: var(--text); }
+  .year-tab.active {
+    background: var(--text);
+    color: var(--bg);
+    border-color: var(--text);
+  }
+  .year-tab-add {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px dashed var(--border);
+    background: transparent;
+    color: var(--text-subtle);
+    transition: all 0.12s;
+  }
+  .year-tab-add:hover { border-color: var(--text-muted); color: var(--text-muted); }
+
+  .grid-wrap { overflow-x: auto; padding-bottom: 4px; }
+
+  .month-row {
+    display: flex;
+    margin-left: 28px;
+    margin-bottom: 4px;
+  }
+  .month-lbl {
+    font-size: 11px;
+    color: var(--text-subtle);
+    line-height: 1;
+  }
+
+  .grid-row { display: flex; align-items: flex-start; }
+
+  .day-col {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    width: 24px;
+    margin-right: 4px;
+    flex-shrink: 0;
+  }
+  .day-lbl {
+    font-size: 10px;
+    color: var(--text-subtle);
+    height: 13px;
+    line-height: 13px;
+  }
+
+  .weeks { display: flex; gap: 2px; }
+  .week-col { display: flex; flex-direction: column; gap: 2px; }
+
+  .cell {
+    width: 13px;
+    height: 13px;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: opacity 0.08s;
+  }
+  .cell:hover { opacity: 0.75; outline: 2px solid var(--text-muted); outline-offset: 1px; }
+  .cell.empty { background: transparent !important; cursor: default; pointer-events: none; }
+  .cell.future { background: var(--cell-empty) !important; cursor: default; }
+  .cell.future:hover { opacity: 1; outline: none; }
+  .cell.today { outline: 2px solid var(--text-muted); outline-offset: 1px; }
+
+  .legend {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 12px;
+  }
+  .legend-left { font-size: 11px; color: var(--text-subtle); }
+  .legend-right { display: flex; align-items: center; gap: 5px; }
+  .legend-lbl { font-size: 11px; color: var(--text-subtle); }
+  .legend-cell { width: 13px; height: 13px; border-radius: 2px; }
+
+  .theme-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-light);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .theme-bar-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    white-space: nowrap;
+  }
+  .theme-swatches { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .theme-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    position: relative;
+    transition: transform 0.12s;
+  }
+  .theme-swatch:hover { transform: scale(1.15); }
+  .theme-swatch.active { border-color: var(--text); }
+  .theme-divider { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
+  .custom-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+  .custom-inputs { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .custom-swatch-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    position: relative;
+  }
+  .custom-swatch-wrap span { font-size: 10px; color: var(--text-subtle); }
+  .custom-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: transform 0.12s;
+    flex-shrink: 0;
+  }
+  .custom-dot:hover { transform: scale(1.15); }
+  .custom-dot.active { border-color: var(--text); }
+
+  /* Figma-style color picker popover */
+  .cpicker {
+    display: none;
+    position: fixed;
+    z-index: 500;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    width: 220px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15), 0 2px 6px rgba(0,0,0,0.08);
+  }
+  .cpicker.open { display: block; }
+  .cp-gradient {
+    width: 192px;
+    height: 140px;
+    border-radius: 6px;
+    position: relative;
+    cursor: crosshair;
+    margin-bottom: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  .cp-sat {
+    position: absolute; inset: 0;
+    background: linear-gradient(to right, #fff, transparent);
+  }
+  .cp-dark {
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, transparent, #000);
+  }
+  .cp-cursor {
+    position: absolute;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.3);
+    transform: translate(-50%,-50%);
+    pointer-events: none;
+  }
+  .cp-hue {
+    width: 192px; height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);
+    position: relative;
+    cursor: pointer;
+    margin-bottom: 10px;
+  }
+  .cp-hue-thumb {
+    position: absolute;
+    top: 50%; transform: translate(-50%,-50%);
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+    pointer-events: none;
+  }
+  .cp-inputs {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .cp-hex-label { font-size: 10px; color: var(--text-subtle); margin-bottom: 2px; }
+  .cp-hex-wrap { flex: 1; }
+  .cp-hex {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 12px;
+    font-family: var(--font-mono, monospace);
+    background: var(--bg-secondary);
+    color: var(--text);
+    outline: none;
+  }
+  .cp-hex:focus { border-color: #0969da; box-shadow: 0 0 0 2px rgba(9,105,218,0.15); }
+  .cp-preview {
+    width: 28px; height: 28px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+    margin-top: 12px;
+  }
+  .cp-apply {
+    display: block;
+    width: 100%;
+    margin-top: 10px;
+    padding: 6px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: var(--text);
+    color: var(--bg);
+    transition: opacity 0.12s;
+  }
+  .cp-apply:hover { opacity: 0.85; }
+
+  .tooltip {
+    position: fixed;
+    background: var(--text);
+    color: var(--bg);
+    font-size: 11px;
+    padding: 5px 9px;
+    border-radius: 5px;
+    pointer-events: none;
+    z-index: 999;
+    display: none;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    width: 100%;
+    max-width: 340px;
+    box-shadow: var(--shadow);
+  }
+  .modal h2 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  .modal-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 18px;
+  }
+  .form-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    display: block;
+    margin-bottom: 5px;
+  }
+  .form-input {
+    display: block;
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    margin-bottom: 14px;
+    outline: none;
+    transition: border-color 0.12s;
+  }
+  .form-input:focus { border-color: #0969da; box-shadow: 0 0 0 3px rgba(9,105,218,0.12); }
+  .form-note {
+    font-size: 11px;
+    color: var(--text-subtle);
+    margin-top: -10px;
+    margin-bottom: 14px;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 4px;
+  }
+  .modal-divider {
+    border: none;
+    border-top: 1px solid var(--border-light);
+    margin: 16px 0;
+  }
+
+  .hours-quick {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .quick-btn {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .quick-btn:hover { background: var(--bg-secondary); color: var(--text); }
+  .quick-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .delete-link {
+    font-size: 12px;
+    color: #cf222e;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .delete-link:hover { opacity: 0.75; }
+
+  .gh-status {
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    display: none;
+  }
+  .gh-status.info { background: #ddf4ff; color: #0550ae; border: 1px solid #b6e3ff; }
+  .gh-status.error { background: #ffebe9; color: #cf222e; border: 1px solid #ffcecb; }
+
+  @media (max-width: 600px) {
+    body { padding: 16px 12px; }
+    .board-card { padding: 14px 12px 12px; }
+    .theme-bar { padding: 10px 12px; }
+    .header { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Contribution Board</h1>
+      <p>Track your daily activity — click any cell to log hours</p>
+    </div>
+    <div class="header-right">
+      <button class="btn" onclick="openGhModal()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub Sync
+      </button>
+    </div>
+  </div>
+
+  <div class="theme-bar">
+    <span class="theme-bar-label">Theme</span>
+    <div class="theme-swatches" id="theme-swatches"></div>
+    <div class="theme-divider"></div>
+    <span class="custom-label">Custom</span>
+    <div class="custom-inputs">
+      <div class="custom-swatch-wrap">
+        <div class="custom-dot" id="dot-0" onclick="openPicker(0,event)" title="Low"></div>
+        <span>Low</span>
+      </div>
+      <div class="custom-swatch-wrap">
+        <div class="custom-dot" id="dot-1" onclick="openPicker(1,event)" title="Mid"></div>
+        <span>Mid</span>
+      </div>
+      <div class="custom-swatch-wrap">
+        <div class="custom-dot" id="dot-2" onclick="openPicker(2,event)" title="High"></div>
+        <span>High</span>
+      </div>
+      <div class="custom-swatch-wrap">
+        <div class="custom-dot" id="dot-3" onclick="openPicker(3,event)" title="Max"></div>
+        <span>Max</span>
+      </div>
+    </div>
+
+    <!-- Figma-style color picker popover -->
+    <div class="cpicker" id="cpicker">
+      <div class="cp-gradient" id="cp-gradient">
+        <div class="cp-sat"></div>
+        <div class="cp-dark"></div>
+        <div class="cp-cursor" id="cp-cursor"></div>
+      </div>
+      <div class="cp-hue" id="cp-hue">
+        <div class="cp-hue-thumb" id="cp-hue-thumb"></div>
+      </div>
+      <div class="cp-inputs">
+        <div class="cp-hex-wrap">
+          <div class="cp-hex-label">Hex</div>
+          <input class="cp-hex" id="cp-hex" type="text" maxlength="7" spellcheck="false">
+        </div>
+        <div class="cp-preview" id="cp-preview"></div>
+      </div>
+      <button class="cp-apply" onclick="applyPickerColor()">Apply</button>
+    </div>
+  </div>
+
+  <div class="board-card">
+    <div class="board-top">
+      <div class="board-stats" id="board-stats">Loading…</div>
+      <div class="board-controls">
+        <div class="year-tabs" id="year-tabs"></div>
+      </div>
+    </div>
+    <div class="grid-wrap">
+      <div class="month-row" id="month-row"></div>
+      <div class="grid-row">
+        <div class="day-col" id="day-col"></div>
+        <div class="weeks" id="weeks"></div>
+      </div>
+    </div>
+    <div class="legend">
+      <span class="legend-left" id="legend-left">Click a cell to log hours worked</span>
+      <div class="legend-right">
+        <span class="legend-lbl">Less</span>
+        <div class="legend-cell" id="lc0" style="background:#ebedf0"></div>
+        <div class="legend-cell" id="lc1"></div>
+        <div class="legend-cell" id="lc2"></div>
+        <div class="legend-cell" id="lc3"></div>
+        <div class="legend-cell" id="lc4"></div>
+        <span class="legend-lbl">More</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Cell Edit Modal -->
+<div class="modal-overlay" id="cell-modal">
+  <div class="modal">
+    <h2>Log Activity</h2>
+    <div class="modal-sub" id="cell-modal-date"></div>
+    <label class="form-label">Hours worked</label>
+    <div class="hours-quick" id="quick-btns"></div>
+    <input type="number" class="form-input" id="hours-input" min="0" max="24" step="0.5" placeholder="Or enter custom hours…">
+    <div class="modal-actions">
+      <button class="delete-link" onclick="clearDay()" id="clear-btn" style="margin-right:auto">Clear</button>
+      <button class="btn" onclick="closeCellModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveHours()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Year Modal -->
+<div class="modal-overlay" id="year-modal">
+  <div class="modal">
+    <h2>Add Year</h2>
+    <div class="modal-sub">Add another year to your board</div>
+    <label class="form-label" for="year-input">Year</label>
+    <input type="number" class="form-input" id="year-input" min="2000" max="2100" placeholder="e.g. 2027">
+    <div class="modal-actions">
+      <button class="btn" onclick="closeYearModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmAddYear()">Add Year</button>
+    </div>
+  </div>
+</div>
+
+<!-- GitHub Modal -->
+<div class="modal-overlay" id="gh-modal">
+  <div class="modal">
+    <h2>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub Sync
+    </h2>
+    <div class="modal-sub">Import your public contribution data from GitHub</div>
+    <div class="gh-status" id="gh-status"></div>
+    <label class="form-label" for="gh-username">GitHub username</label>
+    <input type="text" class="form-input" id="gh-username" placeholder="e.g. octocat" autocomplete="off" spellcheck="false">
+    <label class="form-label" for="gh-token">Personal Access Token <span style="color:var(--text-subtle);font-weight:400">(optional)</span></label>
+    <input type="password" class="form-input" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+    <p class="form-note">Token is only stored in your browser. Required for private repos or higher rate limits.</p>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeGhModal()">Cancel</button>
+      <button class="btn btn-primary" id="gh-load-btn" onclick="loadGitHub()">Import contributions</button>
+    </div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+const THEMES = [
+  { name: 'GitHub',  id: 'github',  dot: '#40c463', colors: ['#9be9a8','#40c463','#30a14e','#216e39'] },
+  { name: 'Ocean',   id: 'ocean',   dot: '#388bfd', colors: ['#a5d6ff','#388bfd','#1f6feb','#0d419d'] },
+  { name: 'Sunset',  id: 'sunset',  dot: '#f97583', colors: ['#ffa7b5','#f97583','#ea4a5a','#b31d28'] },
+  { name: 'Purple',  id: 'purple',  dot: '#bc8cff', colors: ['#d8b4fe','#bc8cff','#8957e5','#6639ba'] },
+  { name: 'Amber',   id: 'amber',   dot: '#fbbf24', colors: ['#fde68a','#fbbf24','#d97706','#92400e'] },
+  { name: 'Teal',    id: 'teal',    dot: '#2dd4bf', colors: ['#99f6e4','#2dd4bf','#0d9488','#0f766e'] },
+  { name: 'Coral',   id: 'coral',   dot: '#fb923c', colors: ['#fed7aa','#fb923c','#ea580c','#9a3412'] },
+];
+
+const QUICK_HOURS = [0.5, 1, 2, 3, 4, 6, 8];
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DAYS = ['','Mon','','Wed','','Fri',''];
+
+let state = (() => {
+  try { return JSON.parse(localStorage.getItem('cb_v2') || '{}'); } catch(e) { return {}; }
+})();
+if (!state.years) state.years = [new Date().getFullYear()];
+if (!state.data)  state.data  = {};
+if (!state.theme) state.theme = 'github';
+if (!state.customColors) state.customColors = ['#9be9a8','#40c463','#30a14e','#216e39'];
+
+let activeYear = state.years[state.years.length - 1];
+let activeTheme = getThemeColors();
+let modalKey = null;
+
+function save() { localStorage.setItem('cb_v2', JSON.stringify(state)); }
+
+function getThemeColors() {
+  if (state.theme === 'custom') return state.customColors;
+  return (THEMES.find(t => t.id === state.theme) || THEMES[0]).colors;
+}
+
+function cellColor(hours) {
+  const c = activeTheme;
+  if (!hours || hours <= 0) return getComputedStyle(document.documentElement).getPropertyValue('--cell-empty').trim() || '#ebedf0';
+  if (hours < 2) return c[0];
+  if (hours < 4) return c[1];
+  if (hours < 6) return c[2];
+  return c[3];
+}
+
+function dateKey(d) {
+  return d.toISOString().slice(0,10);
+}
+
+function buildGrid(year) {
+  const weeksEl  = document.getElementById('weeks');
+  const monthEl  = document.getElementById('month-row');
+  const dayColEl = document.getElementById('day-col');
+  weeksEl.innerHTML = monthEl.innerHTML = dayColEl.innerHTML = '';
+
+  const jan1  = new Date(year, 0, 1);
+  const dec31 = new Date(year, 11, 31);
+  const startDow = (jan1.getDay() + 6) % 7;
+  const today = new Date(); today.setHours(23,59,59,999);
+  const todayKey = dateKey(new Date());
+  const totalDays = Math.round((dec31 - jan1) / 86400000) + 1;
+  const totalCells = startDow + totalDays;
+  const weeks = Math.ceil(totalCells / 7);
+
+  dayColEl.innerHTML = DAYS.map(d => `<div class="day-lbl">${d}</div>`).join('');
+
+  let monthStart = [];
+  let lastMonth = -1;
+  for (let w = 0; w < weeks; w++) {
+    for (let d = 0; d < 7; d++) {
+      const off = w * 7 + d - startDow;
+      if (off < 0 || off >= totalDays) continue;
+      const date = new Date(year, 0, 1 + off);
+      if (date.getMonth() !== lastMonth) {
+        monthStart.push({ week: w, month: date.getMonth() });
+        lastMonth = date.getMonth();
+      }
+    }
+  }
+
+  monthStart.forEach((ms, i) => {
+    const span = i + 1 < monthStart.length ? monthStart[i+1].week - ms.week : weeks - ms.week;
+    const el = document.createElement('div');
+    el.className = 'month-lbl';
+    el.style.cssText = `width:${span * 15}px;min-width:${span * 15}px`;
+    el.textContent = MONTHS[ms.month];
+    monthEl.appendChild(el);
+  });
+
+  for (let w = 0; w < weeks; w++) {
+    const col = document.createElement('div');
+    col.className = 'week-col';
+    for (let d = 0; d < 7; d++) {
+      const off = w * 7 + d - startDow;
+      const cell = document.createElement('div');
+      if (off < 0 || off >= totalDays) {
+        cell.className = 'cell empty';
+        col.appendChild(cell);
+        continue;
+      }
+      const date = new Date(year, 0, 1 + off);
+      const key = dateKey(date);
+      const isFuture = date > today;
+      const isToday = key === todayKey;
+      const hours = state.data[key] || 0;
+
+      cell.className = 'cell' + (isFuture ? ' future' : '') + (isToday ? ' today' : '');
+      if (!isFuture) cell.style.background = cellColor(hours);
+
+      if (!isFuture) {
+        cell.addEventListener('click', () => openCellModal(key, date, hours));
+        cell.addEventListener('mouseenter', e => showTip(e, date, hours));
+        cell.addEventListener('mouseleave', hideTip);
+      } else {
+        const label = `${MONTHS[date.getMonth()]} ${date.getDate()}, ${year}`;
+        cell.addEventListener('mouseenter', e => showTipRaw(e, label, null));
+        cell.addEventListener('mouseleave', hideTip);
+      }
+      col.appendChild(cell);
+    }
+    weeksEl.appendChild(col);
+  }
+  updateStats(year);
+  updateLegend();
+}
+
+function updateStats(year) {
+  let days = 0, total = 0;
+  Object.entries(state.data).forEach(([k, v]) => {
+    if (k.startsWith(year + '-') && v > 0) { days++; total += v; }
+  });
+  const s = document.getElementById('board-stats');
+  s.innerHTML = `<strong>${days}</strong> active ${days === 1 ? 'day' : 'days'} &nbsp;·&nbsp; <strong>${total % 1 === 0 ? total : total.toFixed(1)}</strong> hours in ${year}`;
+}
+
+function updateLegend() {
+  const c = activeTheme;
+  const empty = getComputedStyle(document.documentElement).getPropertyValue('--cell-empty').trim() || '#ebedf0';
+  document.getElementById('lc0').style.background = empty;
+  [1,2,3,4].forEach((i,j) => {
+    document.getElementById('lc'+i).style.background = c[j];
+  });
+}
+
+function renderYearTabs() {
+  const el = document.getElementById('year-tabs');
+  el.innerHTML = '';
+  [...state.years].sort((a,b)=>a-b).forEach(y => {
+    const btn = document.createElement('button');
+    btn.className = 'year-tab' + (y === activeYear ? ' active' : '');
+    btn.textContent = y;
+    btn.onclick = () => { activeYear = y; renderYearTabs(); buildGrid(y); };
+    el.appendChild(btn);
+  });
+  const add = document.createElement('button');
+  add.className = 'year-tab-add';
+  add.textContent = '+ Add year';
+  add.onclick = openYearModal;
+  el.appendChild(add);
+}
+
+function renderThemeSwatches() {
+  const el = document.getElementById('theme-swatches');
+  el.innerHTML = '';
+  THEMES.forEach(t => {
+    const s = document.createElement('div');
+    s.className = 'theme-swatch' + (state.theme === t.id ? ' active' : '');
+    s.title = t.name;
+    s.style.background = t.dot;
+    s.onclick = () => { state.theme = t.id; activeTheme = getThemeColors(); save(); renderThemeSwatches(); buildGrid(activeYear); syncCustomInputs(); };
+    el.appendChild(s);
+  });
+}
+
+function syncCustomInputs() {
+  const c = state.theme === 'custom' ? state.customColors : (THEMES.find(t=>t.id===state.theme)||THEMES[0]).colors;
+  c.forEach((hex, i) => {
+    const dot = document.getElementById('dot-' + i);
+    if (dot) { dot.style.background = hex; dot.dataset.color = hex; }
+  });
+}
+
+/* ── Figma-style color picker ── */
+let pickerIdx = null;
+let pickerHSV = { h: 0, s: 1, v: 1 };
+let draggingGrad = false, draggingHue = false;
+
+function hsvToHex(h, s, v) {
+  let r, g, b;
+  const i = Math.floor(h / 60) % 6, f = h / 60 - Math.floor(h / 60);
+  const p = v * (1 - s), q = v * (1 - f * s), t = v * (1 - (1 - f) * s);
+  [r,g,b] = [[v,t,p],[q,v,p],[p,v,t],[p,q,v],[t,p,v],[v,p,q]][i];
+  const toH = x => Math.round(x * 255).toString(16).padStart(2,'0');
+  return '#' + toH(r) + toH(g) + toH(b);
+}
+
+function hexToHSV(hex) {
+  hex = hex.replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  const r = parseInt(hex.slice(0,2),16)/255, g = parseInt(hex.slice(2,4),16)/255, b = parseInt(hex.slice(4,6),16)/255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b), d = max - min;
+  let h = 0;
+  if (d) {
+    if (max===r) h = ((g-b)/d + (g<b?6:0)) * 60;
+    else if (max===g) h = ((b-r)/d + 2) * 60;
+    else h = ((r-g)/d + 4) * 60;
+  }
+  return { h, s: max ? d/max : 0, v: max };
+}
+
+function isValidHex(h) { return /^#[0-9a-fA-F]{6}$/.test(h); }
+
+function updatePickerUI() {
+  const { h, s, v } = pickerHSV;
+  const hex = hsvToHex(h, s, v);
+  const hueColor = hsvToHex(h, 1, 1);
+  const grad = document.getElementById('cp-gradient');
+  grad.style.background = hueColor;
+  const gw = grad.offsetWidth || 192, gh = grad.offsetHeight || 140;
+  const cur = document.getElementById('cp-cursor');
+  cur.style.left = (s * gw) + 'px';
+  cur.style.top  = ((1 - v) * gh) + 'px';
+  cur.style.background = hex;
+  const thumb = document.getElementById('cp-hue-thumb');
+  thumb.style.left = (h / 360 * (document.getElementById('cp-hue').offsetWidth || 192)) + 'px';
+  thumb.style.background = hueColor;
+  document.getElementById('cp-hex').value = hex;
+  document.getElementById('cp-preview').style.background = hex;
+}
+
+function openPicker(idx, e) {
+  e.stopPropagation();
+  pickerIdx = idx;
+  const dot = document.getElementById('dot-' + idx);
+  const hex = dot.dataset.color || state.customColors[idx] || '#40c463';
+  pickerHSV = hexToHSV(hex);
+  document.querySelectorAll('.custom-dot').forEach((d,i) => d.classList.toggle('active', i===idx));
+  const picker = document.getElementById('cpicker');
+  picker.classList.add('open');
+  const rect = dot.getBoundingClientRect();
+  const pw = 220, ph = 260;
+  let left = rect.left, top = rect.bottom + 6;
+  if (left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  if (top + ph > window.innerHeight - 8) top = rect.top - ph - 6;
+  picker.style.left = left + 'px';
+  picker.style.top  = top + 'px';
+  setTimeout(updatePickerUI, 0);
+}
+
+function closePicker() {
+  document.getElementById('cpicker').classList.remove('open');
+  document.querySelectorAll('.custom-dot').forEach(d => d.classList.remove('active'));
+  pickerIdx = null;
+}
+
+function applyPickerColor() {
+  if (pickerIdx === null) return;
+  const hex = hsvToHex(pickerHSV.h, pickerHSV.s, pickerHSV.v);
+  state.customColors[pickerIdx] = hex;
+  document.getElementById('dot-' + pickerIdx).style.background = hex;
+  document.getElementById('dot-' + pickerIdx).dataset.color = hex;
+  state.theme = 'custom'; activeTheme = [...state.customColors];
+  save(); renderThemeSwatches(); buildGrid(activeYear); closePicker();
+}
+
+/* gradient drag */
+document.getElementById('cp-gradient').addEventListener('mousedown', e => {
+  draggingGrad = true; updateGrad(e);
+});
+document.getElementById('cp-hue').addEventListener('mousedown', e => {
+  draggingHue = true; updateHue(e);
+});
+document.addEventListener('mousemove', e => {
+  if (draggingGrad) updateGrad(e);
+  if (draggingHue) updateHue(e);
+});
+document.addEventListener('mouseup', () => { draggingGrad = draggingHue = false; });
+
+function updateGrad(e) {
+  const rect = document.getElementById('cp-gradient').getBoundingClientRect();
+  pickerHSV.s = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  pickerHSV.v = Math.max(0, Math.min(1, 1 - (e.clientY - rect.top) / rect.height));
+  updatePickerUI();
+}
+function updateHue(e) {
+  const rect = document.getElementById('cp-hue').getBoundingClientRect();
+  pickerHSV.h = Math.max(0, Math.min(360, (e.clientX - rect.left) / rect.width * 360));
+  updatePickerUI();
+}
+
+/* touch support */
+['cp-gradient','cp-hue'].forEach(id => {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', e => { e.preventDefault(); (id==='cp-gradient'?updateGrad:updateHue)(e.touches[0]); }, {passive:false});
+  el.addEventListener('touchmove', e => { e.preventDefault(); (id==='cp-gradient'?updateGrad:updateHue)(e.touches[0]); }, {passive:false});
+});
+
+/* hex input */
+document.getElementById('cp-hex').addEventListener('input', function() {
+  let v = this.value.trim();
+  if (!v.startsWith('#')) v = '#' + v;
+  if (isValidHex(v)) { pickerHSV = hexToHSV(v); updatePickerUI(); }
+  else { document.getElementById('cp-preview').style.background = 'transparent'; }
+});
+document.getElementById('cp-hex').addEventListener('keydown', e => { if (e.key==='Enter') applyPickerColor(); e.stopPropagation(); });
+
+/* close picker on outside click */
+document.addEventListener('click', e => {
+  const picker = document.getElementById('cpicker');
+  if (picker.classList.contains('open') && !picker.contains(e.target)) closePicker();
+});
+
+/* Cell Modal */
+let pendingKey = null;
+function openCellModal(key, date, currentHours) {
+  pendingKey = key;
+  const label = `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  document.getElementById('cell-modal-date').textContent = label;
+  document.getElementById('hours-input').value = currentHours || '';
+  const qEl = document.getElementById('quick-btns');
+  qEl.innerHTML = '';
+  QUICK_HOURS.forEach(h => {
+    const b = document.createElement('button');
+    b.className = 'quick-btn' + (currentHours === h ? ' active' : '');
+    b.textContent = h + 'h';
+    b.onclick = () => {
+      document.getElementById('hours-input').value = h;
+      qEl.querySelectorAll('.quick-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    };
+    qEl.appendChild(b);
+  });
+  document.getElementById('clear-btn').style.display = currentHours > 0 ? '' : 'none';
+  document.getElementById('cell-modal').classList.add('open');
+  document.getElementById('hours-input').focus();
+}
+function closeCellModal() { document.getElementById('cell-modal').classList.remove('open'); pendingKey = null; }
+function saveHours() {
+  const h = parseFloat(document.getElementById('hours-input').value) || 0;
+  state.data[pendingKey] = Math.max(0, Math.min(24, h));
+  if (state.data[pendingKey] === 0) delete state.data[pendingKey];
+  save(); closeCellModal(); buildGrid(activeYear);
+}
+function clearDay() {
+  delete state.data[pendingKey];
+  save(); closeCellModal(); buildGrid(activeYear);
+}
+
+/* Year Modal */
+function openYearModal() { document.getElementById('year-input').value = ''; document.getElementById('year-modal').classList.add('open'); setTimeout(()=>document.getElementById('year-input').focus(),80); }
+function closeYearModal() { document.getElementById('year-modal').classList.remove('open'); }
+function confirmAddYear() {
+  const y = parseInt(document.getElementById('year-input').value);
+  if (isNaN(y) || y < 2000 || y > 2100) { alert('Please enter a valid year (2000–2100).'); return; }
+  if (state.years.includes(y)) { alert('This year is already added.'); return; }
+  state.years.push(y); state.years.sort((a,b)=>a-b);
+  save(); activeYear = y; renderYearTabs(); buildGrid(y); closeYearModal();
+}
+
+/* GitHub Modal */
+function openGhModal() { document.getElementById('gh-modal').classList.add('open'); document.getElementById('gh-status').style.display='none'; }
+function closeGhModal() { document.getElementById('gh-modal').classList.remove('open'); }
+function setGhStatus(msg, type) {
+  const el = document.getElementById('gh-status');
+  el.textContent = msg; el.className = 'gh-status ' + type; el.style.display = 'block';
+}
+async function loadGitHub() {
+  const username = document.getElementById('gh-username').value.trim();
+  if (!username) { alert('Please enter your GitHub username.'); return; }
+  const token = document.getElementById('gh-token').value.trim();
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  const btn = document.getElementById('gh-load-btn');
+  btn.textContent = 'Importing…'; btn.disabled = true;
+  setGhStatus('Fetching data from GitHub…', 'info');
+  try {
+    const from = `${activeYear}-01-01T00:00:00Z`;
+    const to   = `${activeYear}-12-31T23:59:59Z`;
+    const query = `query{user(login:"${username}"){contributionsCollection(from:"${from}",to:"${to}"){contributionCalendar{totalContributions weeks{contributionDays{date contributionCount}}}}}}`;
+    const res = await fetch('https://api.github.com/graphql', { method:'POST', headers, body: JSON.stringify({ query }) });
+    if (res.status === 401) throw new Error('Authentication failed. Check your token.');
+    if (!res.ok) throw new Error(`GitHub API error (${res.status})`);
+    const json = await res.json();
+    if (json.errors) throw new Error(json.errors[0].message);
+    const cal = json.data?.user?.contributionsCollection?.contributionCalendar;
+    if (!cal) throw new Error('User not found or no data available.');
+    let imported = 0;
+    cal.weeks.forEach(w => w.contributionDays.forEach(d => {
+      if (d.contributionCount > 0) { state.data[d.date] = d.contributionCount; imported++; }
+    }));
+    save(); buildGrid(activeYear);
+    setGhStatus(`✓ Imported ${cal.totalContributions} contributions (${imported} active days).`, 'info');
+  } catch(e) {
+    setGhStatus('✗ ' + e.message, 'error');
+  } finally {
+    btn.textContent = 'Import contributions'; btn.disabled = false;
+  }
+}
+
+/* Tooltip */
+const tipEl = document.getElementById('tooltip');
+function showTip(e, date, hours) {
+  const label = `${MONTHS[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  const hStr = hours > 0 ? `${hours % 1 === 0 ? hours : hours.toFixed(1)}h logged` : 'No activity';
+  tipEl.textContent = `${label} — ${hStr}`;
+  tipEl.style.display = 'block';
+  moveTip(e);
+}
+function showTipRaw(e, label, hours) {
+  tipEl.textContent = label + (hours !== null ? ` — ${hours}h` : '');
+  tipEl.style.display = 'block';
+  moveTip(e);
+}
+function moveTip(e) {
+  tipEl.style.left = (e.clientX + 10) + 'px';
+  tipEl.style.top  = (e.clientY - 30) + 'px';
+}
+function hideTip() { tipEl.style.display = 'none'; }
+document.addEventListener('mousemove', e => { if (tipEl.style.display === 'block') moveTip(e); });
+
+/* Close modals on backdrop click */
+['cell-modal','year-modal','gh-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
+/* Keyboard shortcuts */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') ['cell-modal','year-modal','gh-modal'].forEach(id => document.getElementById(id).classList.remove('open'));
+  if (e.key === 'Enter' && document.getElementById('cell-modal').classList.contains('open')) saveHours();
+  if (e.key === 'Enter' && document.getElementById('year-modal').classList.contains('open')) confirmAddYear();
+});
+
+/* Init */
+syncCustomInputs();
+renderThemeSwatches();
+renderYearTabs();
+buildGrid(activeYear);
+</script>
+</body>
+</html>
