@@ -484,6 +484,18 @@
     text-underline-offset: 2px;
   }
   .delete-link:hover { opacity: 0.75; }
+  .btn-danger-ghost {
+    font-size: 12px;
+    font-weight: 500;
+    padding: 3px 9px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-subtle);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .btn-danger-ghost:hover { color: #cf222e; border-color: #cf222e33; background: #cf222e0d; }
 
   .gh-status {
     font-size: 12px;
@@ -558,7 +570,11 @@
 
   <div class="board-card">
     <div class="board-top">
-      <div class="board-stats" id="board-stats">Loading…</div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="board-stats" id="board-stats">Loading…</div>
+        <button class="btn-danger-ghost" onclick="confirmClearYear()" id="clear-year-btn" title="Clear all data for this year">Clear</button>
+        <button class="btn-danger-ghost" onclick="confirmDeleteYear()" id="delete-year-btn" title="Delete this year">Delete year</button>
+      </div>
       <div class="board-controls">
         <div class="year-tabs" id="year-tabs"></div>
       </div>
@@ -612,6 +628,18 @@
     <div class="modal-actions">
       <button class="btn" onclick="closeYearModal()">Cancel</button>
       <button class="btn btn-primary" onclick="confirmAddYear()">Add Year</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Modal -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="max-width:320px">
+    <h2 id="confirm-title">Are you sure?</h2>
+    <div class="modal-sub" id="confirm-desc"></div>
+    <div class="modal-actions" style="margin-top:20px">
+      <button class="btn" onclick="closeConfirm()">Cancel</button>
+      <button class="btn" id="confirm-ok-btn" style="border-color:#cf222e;color:#cf222e" onclick="runConfirm()">Confirm</button>
     </div>
   </div>
 </div>
@@ -943,6 +971,42 @@ document.getElementById('cp-hex').addEventListener('input', function() {
 });
 document.getElementById('cp-hex').addEventListener('keydown', e => { if (e.key==='Enter') applyPickerColor(); e.stopPropagation(); });
 
+/* Confirm modal */
+let confirmAction = null;
+function openConfirm(title, desc, fn) {
+  document.getElementById('confirm-title').textContent = title;
+  document.getElementById('confirm-desc').textContent = desc;
+  confirmAction = fn;
+  document.getElementById('confirm-modal').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-modal').classList.remove('open'); confirmAction = null; }
+function runConfirm() { if (confirmAction) confirmAction(); closeConfirm(); }
+
+function confirmClearYear() {
+  openConfirm(
+    `Clear ${activeYear}?`,
+    `This will permanently delete all logged hours for ${activeYear}. This cannot be undone.`,
+    () => {
+      Object.keys(state.data).forEach(k => { if (k.startsWith(activeYear + '-')) delete state.data[k]; });
+      save(); buildGrid(activeYear);
+    }
+  );
+}
+
+function confirmDeleteYear() {
+  if (state.years.length <= 1) { openConfirm('Cannot delete', 'You must have at least one year on the board.', ()=>{}); return; }
+  openConfirm(
+    `Delete ${activeYear}?`,
+    `This will remove ${activeYear} from your board and delete all its logged data. This cannot be undone.`,
+    () => {
+      Object.keys(state.data).forEach(k => { if (k.startsWith(activeYear + '-')) delete state.data[k]; });
+      state.years = state.years.filter(y => y !== activeYear);
+      activeYear = state.years[state.years.length - 1];
+      save(); renderYearTabs(); buildGrid(activeYear);
+    }
+  );
+}
+
 /* close picker on outside click */
 document.addEventListener('click', e => {
   const picker = document.getElementById('cpicker');
@@ -1058,13 +1122,13 @@ function hideTip() { tipEl.style.display = 'none'; }
 document.addEventListener('mousemove', e => { if (tipEl.style.display === 'block') moveTip(e); });
 
 /* Close modals on backdrop click */
-['cell-modal','year-modal','gh-modal'].forEach(id => {
+['cell-modal','year-modal','gh-modal','confirm-modal'].forEach(id => {
   document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
 });
 
 /* Keyboard shortcuts */
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') ['cell-modal','year-modal','gh-modal'].forEach(id => document.getElementById(id).classList.remove('open'));
+  if (e.key === 'Escape') ['cell-modal','year-modal','gh-modal','confirm-modal'].forEach(id => document.getElementById(id).classList.remove('open'));
   if (e.key === 'Enter' && document.getElementById('cell-modal').classList.contains('open')) saveHours();
   if (e.key === 'Enter' && document.getElementById('year-modal').classList.contains('open')) confirmAddYear();
 });
