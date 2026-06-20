@@ -562,10 +562,16 @@
       <button class="cp-apply" onclick="applyPickerColor()">Apply</button>
     </div>
 
-    <button class="btn" style="margin-left:auto;white-space:nowrap;flex-shrink:0" onclick="openGhModal()">
-      <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-      GitHub Sync
-    </button>
+    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;flex-shrink:0">
+      <button class="btn" id="sync-btn" onclick="openSyncModal()" style="white-space:nowrap">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        <span id="sync-btn-label">Cloud Sync</span>
+      </button>
+      <button class="btn" style="white-space:nowrap" onclick="openGhModal()">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        GitHub Sync
+      </button>
+    </div>
   </div>
 
   <div class="board-card">
@@ -628,6 +634,96 @@
     <div class="modal-actions">
       <button class="btn" onclick="closeYearModal()">Cancel</button>
       <button class="btn btn-primary" onclick="confirmAddYear()">Add Year</button>
+    </div>
+  </div>
+</div>
+
+<!-- Welcome / Setup Modal -->
+<div class="modal-overlay open" id="setup-modal">
+  <div class="modal" style="max-width:400px">
+    <!-- Step 1: Welcome -->
+    <div id="setup-step-1">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:36px;margin-bottom:10px">🌱</div>
+        <h2 style="font-size:18px;margin-bottom:6px">Welcome to Contribution Board</h2>
+        <p style="font-size:13px;color:var(--text-muted);line-height:1.6">Track your daily activity with a GitHub-style grass board.<br>Your data is saved to your own JSONBin account — free, private, and synced across all devices.</p>
+      </div>
+      <div style="background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:8px;padding:12px 14px;margin-bottom:18px">
+        <div style="font-size:12px;font-weight:500;color:var(--text-muted);margin-bottom:8px">How it works</div>
+        <div style="display:flex;flex-direction:column;gap:6px">
+          <div style="font-size:12px;color:var(--text-muted);display:flex;gap:8px;align-items:flex-start"><span style="color:#2da44e;font-weight:600;flex-shrink:0">1.</span>Create a free JSONBin account</div>
+          <div style="font-size:12px;color:var(--text-muted);display:flex;gap:8px;align-items:flex-start"><span style="color:#2da44e;font-weight:600;flex-shrink:0">2.</span>Paste your Master Key below</div>
+          <div style="font-size:12px;color:var(--text-muted);display:flex;gap:8px;align-items:flex-start"><span style="color:#2da44e;font-weight:600;flex-shrink:0">3.</span>Your data is saved privately and syncs across devices</div>
+        </div>
+      </div>
+      <div class="modal-actions" style="flex-direction:column;gap:8px">
+        <button class="btn btn-primary" style="width:100%;justify-content:center;padding:9px" onclick="goSetupStep2()">
+          Get started — it's free
+        </button>
+        <button class="btn" style="width:100%;justify-content:center;padding:9px;font-size:12px;color:var(--text-muted)" onclick="setupLater()">
+          Use without saving (data may be lost)
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: API Key input -->
+    <div id="setup-step-2" style="display:none">
+      <button onclick="goSetupStep1()" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:4px">← Back</button>
+      <h2 style="font-size:16px;margin-bottom:4px">Enter your JSONBin Master Key</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">
+        Go to <strong>jsonbin.io</strong> → Sign up (free) → Profile icon → <strong>API Keys</strong> → copy your <strong>Master Key</strong>
+      </p>
+      <div class="gh-status" id="setup-status"></div>
+      <label class="form-label" for="setup-master-key">Master Key</label>
+      <input type="password" class="form-input" id="setup-master-key" placeholder="$2a$10$..." autocomplete="off" spellcheck="false">
+      <p class="form-note">Your key is stored only in your browser and never shared.</p>
+      <div class="modal-actions">
+        <button class="btn" onclick="setupLater()">Skip for now</button>
+        <button class="btn btn-primary" id="setup-save-btn" onclick="setupWithKey()">Save &amp; start</button>
+      </div>
+    </div>
+
+    <!-- Step 3: Already have sync code -->
+    <div id="setup-step-3" style="display:none">
+      <button onclick="goSetupStep2()" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:4px">← Back</button>
+      <h2 style="font-size:16px;margin-bottom:4px">Restore existing data</h2>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">Already used this widget on another device? Enter your Sync Code to restore your data.</p>
+      <label class="form-label" for="setup-sync-code">Sync Code</label>
+      <input type="text" class="form-input" id="setup-sync-code" placeholder="e.g. 6849f2a3c..." autocomplete="off" spellcheck="false">
+      <div class="gh-status" id="setup-status-3"></div>
+      <div class="modal-actions">
+        <button class="btn" onclick="goSetupStep2()">Cancel</button>
+        <button class="btn btn-primary" id="setup-restore-btn" onclick="restoreFromSyncCode()">Restore</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sync Settings Modal -->
+<div class="modal-overlay" id="sync-modal">
+  <div class="modal" style="max-width:360px">
+    <h2 style="font-size:16px;margin-bottom:4px">Cloud Sync</h2>
+    <div id="sync-connected-view" style="display:none">
+      <p class="modal-sub" id="sync-status-line">Synced</p>
+      <div style="background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:8px;padding:12px 14px;margin-bottom:14px">
+        <div style="font-size:11px;color:var(--text-subtle);margin-bottom:4px">Your Sync Code</div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <code style="font-size:12px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" id="sync-code-display"></code>
+          <button class="btn" style="font-size:11px;padding:3px 8px;flex-shrink:0" onclick="copySyncCode()">Copy</button>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">Use this code on another device to access your data. Go to Cloud Sync → Restore from another device.</p>
+      <div class="modal-actions">
+        <button class="btn" style="color:#cf222e;border-color:#cf222e33;font-size:12px" onclick="disconnectSync()">Disconnect</button>
+        <button class="btn" onclick="closeSyncModal()">Close</button>
+      </div>
+    </div>
+    <div id="sync-disconnected-view" style="display:none">
+      <p class="modal-sub">Set up cloud sync to save your data across all devices.</p>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeSyncModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="closeSyncModal();reopenSetup()">Set up sync</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1224,11 +1320,220 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('year-modal').classList.contains('open')) confirmAddYear();
 });
 
+/* ── JSONBin Cloud Sync ── */
+const JSONBIN_API = 'https://api.jsonbin.io/v3';
+let syncDebounceTimer = null;
+
+function getSyncState() {
+  try { return JSON.parse(localStorage.getItem('cb_sync') || '{}'); } catch(e) { return {}; }
+}
+function setSyncState(obj) { localStorage.setItem('cb_sync', JSON.stringify(obj)); }
+
+function updateSyncBtn() {
+  const s = getSyncState();
+  const label = document.getElementById('sync-btn-label');
+  const btn = document.getElementById('sync-btn');
+  if (s.masterKey && s.binId) {
+    label.textContent = 'Synced ✓';
+    btn.style.color = '#2da44e';
+    btn.style.borderColor = '#2da44e44';
+  } else {
+    label.textContent = 'Cloud Sync';
+    btn.style.color = '';
+    btn.style.borderColor = '';
+  }
+}
+
+async function pushToCloud() {
+  const s = getSyncState();
+  if (!s.masterKey || !s.binId) return;
+  try {
+    await fetch(`${JSONBIN_API}/b/${s.binId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'X-Master-Key': s.masterKey },
+      body: JSON.stringify({ years: state.years, data: state.data, theme: state.theme, customColors: state.customColors, ghUsername: state.ghUsername, ghToken: state.ghToken })
+    });
+  } catch(e) { /* silent fail — data still in localStorage */ }
+}
+
+async function pullFromCloud(masterKey, binId) {
+  const res = await fetch(`${JSONBIN_API}/b/${binId}/latest`, {
+    headers: { 'X-Master-Key': masterKey }
+  });
+  if (!res.ok) throw new Error('Could not fetch data. Check your Sync Code.');
+  const json = await res.json();
+  return json.record;
+}
+
+async function createBin(masterKey) {
+  const res = await fetch(`${JSONBIN_API}/b`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': masterKey, 'X-Bin-Name': 'contribution-board', 'X-Bin-Private': 'true' },
+    body: JSON.stringify({ years: state.years, data: state.data, theme: state.theme, customColors: state.customColors })
+  });
+  if (res.status === 401) throw new Error('Invalid Master Key. Please check and try again.');
+  if (!res.ok) throw new Error(`JSONBin error (${res.status})`);
+  const json = await res.json();
+  return json.metadata.id;
+}
+
+function debouncedPush() {
+  clearTimeout(syncDebounceTimer);
+  syncDebounceTimer = setTimeout(pushToCloud, 1500);
+}
+
+/* Override save to also push */
+const _origSave = save;
+save = function() { _origSave(); debouncedPush(); };
+
+/* Setup modal flow */
+function goSetupStep1() {
+  document.getElementById('setup-step-1').style.display = '';
+  document.getElementById('setup-step-2').style.display = 'none';
+  document.getElementById('setup-step-3').style.display = 'none';
+}
+function goSetupStep2() {
+  document.getElementById('setup-step-1').style.display = 'none';
+  document.getElementById('setup-step-2').style.display = '';
+  document.getElementById('setup-step-3').style.display = 'none';
+  document.getElementById('setup-status').style.display = 'none';
+  setTimeout(() => document.getElementById('setup-master-key').focus(), 80);
+}
+function goSetupStep3() {
+  document.getElementById('setup-step-1').style.display = 'none';
+  document.getElementById('setup-step-2').style.display = 'none';
+  document.getElementById('setup-step-3').style.display = '';
+  document.getElementById('setup-status-3').style.display = 'none';
+  setTimeout(() => document.getElementById('setup-sync-code').focus(), 80);
+}
+function setupLater() {
+  document.getElementById('setup-modal').classList.remove('open');
+}
+function reopenSetup() {
+  goSetupStep1();
+  document.getElementById('setup-modal').classList.add('open');
+}
+
+function setSetupStatus(msg, type, step) {
+  const id = step === 3 ? 'setup-status-3' : 'setup-status';
+  const el = document.getElementById(id);
+  el.textContent = msg; el.className = 'gh-status ' + type; el.style.display = 'block';
+}
+
+async function setupWithKey() {
+  const masterKey = document.getElementById('setup-master-key').value.trim();
+  if (!masterKey) { setSetupStatus('Please enter your Master Key.', 'error'); return; }
+  const btn = document.getElementById('setup-save-btn');
+  btn.textContent = 'Connecting…'; btn.disabled = true;
+  setSetupStatus('Creating your personal storage…', 'info');
+  try {
+    const binId = await createBin(masterKey);
+    setSyncState({ masterKey, binId });
+    document.getElementById('setup-modal').classList.remove('open');
+    updateSyncBtn();
+  } catch(e) {
+    setSetupStatus('✗ ' + e.message, 'error');
+  } finally {
+    btn.textContent = 'Save & start'; btn.disabled = false;
+  }
+}
+
+async function restoreFromSyncCode() {
+  const s = getSyncState();
+  if (!s.masterKey) { setSetupStatus('Set up your Master Key first.', 'error', 3); return; }
+  const binId = document.getElementById('setup-sync-code').value.trim();
+  if (!binId) { setSetupStatus('Please enter a Sync Code.', 'error', 3); return; }
+  const btn = document.getElementById('setup-restore-btn');
+  btn.textContent = 'Restoring…'; btn.disabled = true;
+  setSetupStatus('Fetching your data…', 'info', 3);
+  try {
+    const record = await pullFromCloud(s.masterKey, binId);
+    if (record.years) state.years = record.years;
+    if (record.data)  state.data  = record.data;
+    if (record.theme) state.theme = record.theme;
+    if (record.customColors) state.customColors = record.customColors;
+    if (record.ghUsername) state.ghUsername = record.ghUsername;
+    if (record.ghToken) state.ghToken = record.ghToken;
+    setSyncState({ ...s, binId });
+    localStorage.setItem('cb_v2', JSON.stringify(state));
+    activeTheme = getThemeColors();
+    syncCustomInputs(); renderThemeSwatches(); renderYearTabs(); buildGrid(activeYear);
+    document.getElementById('setup-modal').classList.remove('open');
+    updateSyncBtn();
+  } catch(e) {
+    setSetupStatus('✗ ' + e.message, 'error', 3);
+  } finally {
+    btn.textContent = 'Restore'; btn.disabled = false;
+  }
+}
+
+/* Sync settings modal */
+function openSyncModal() {
+  const s = getSyncState();
+  const connected = !!(s.masterKey && s.binId);
+  document.getElementById('sync-connected-view').style.display = connected ? '' : 'none';
+  document.getElementById('sync-disconnected-view').style.display = connected ? 'none' : '';
+  if (connected) {
+    document.getElementById('sync-code-display').textContent = s.binId;
+    document.getElementById('sync-status-line').textContent = 'Your data is saved and synced across devices.';
+  }
+  document.getElementById('sync-modal').classList.add('open');
+}
+function closeSyncModal() { document.getElementById('sync-modal').classList.remove('open'); }
+function copySyncCode() {
+  navigator.clipboard.writeText(getSyncState().binId || '');
+  const btn = event.target;
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy', 1500);
+}
+function disconnectSync() {
+  closeSyncModal();
+  openConfirm(
+    'Disconnect cloud sync?',
+    'Your local data will remain, but it will no longer sync to the cloud.',
+    () => { setSyncState({}); updateSyncBtn(); }
+  );
+}
+
+/* Add "Restore from another device" link to setup step 2 */
+document.getElementById('setup-step-2').insertAdjacentHTML('beforeend',
+  '<p style="text-align:center;margin-top:12px"><button onclick="goSetupStep3()" style="background:none;border:none;font-size:12px;color:var(--text-muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Already have a Sync Code? Restore from another device</button></p>'
+);
+
+/* Close sync/setup modals on backdrop */
+['sync-modal'].forEach(id => {
+  document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
+});
+
 /* Init */
 syncCustomInputs();
 renderThemeSwatches();
 renderYearTabs();
 buildGrid(activeYear);
+updateSyncBtn();
+
+/* Show setup modal only if not configured */
+if (!getSyncState().masterKey) {
+  document.getElementById('setup-modal').classList.add('open');
+} else {
+  document.getElementById('setup-modal').classList.remove('open');
+  /* Pull latest data from cloud on load */
+  (async () => {
+    const s = getSyncState();
+    try {
+      const record = await pullFromCloud(s.masterKey, s.binId);
+      if (record && record.data) {
+        state.years = record.years || state.years;
+        state.data  = record.data;
+        state.theme = record.theme || state.theme;
+        state.customColors = record.customColors || state.customColors;
+        localStorage.setItem('cb_v2', JSON.stringify(state));
+        activeTheme = getThemeColors();
+        syncCustomInputs(); renderThemeSwatches(); renderYearTabs(); buildGrid(activeYear);
+      }
+    } catch(e) { /* use local data */ }
+  })();
+}
 </script>
 </body>
 </html>
