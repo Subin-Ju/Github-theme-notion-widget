@@ -651,16 +651,38 @@
       <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="vertical-align:-2px;margin-right:5px"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
       GitHub Sync
     </h2>
-    <div class="modal-sub">Import your public contribution data from GitHub</div>
-    <div class="gh-status" id="gh-status"></div>
-    <label class="form-label" for="gh-username">GitHub username</label>
-    <input type="text" class="form-input" id="gh-username" placeholder="e.g. octocat" autocomplete="off" spellcheck="false">
-    <label class="form-label" for="gh-token">Personal Access Token <span style="color:var(--text-subtle);font-weight:400">(optional)</span></label>
-    <input type="password" class="form-input" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
-    <p class="form-note">Token is only stored in your browser. Required for private repos or higher rate limits.</p>
-    <div class="modal-actions">
-      <button class="btn" onclick="closeGhModal()">Cancel</button>
-      <button class="btn btn-primary" id="gh-load-btn" onclick="loadGitHub()">Import contributions</button>
+
+    <!-- Connected state -->
+    <div id="gh-connected-view" style="display:none">
+      <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:8px;margin-bottom:14px">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-muted);flex-shrink:0"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:500;color:var(--text)" id="gh-connected-name"></div>
+          <div style="font-size:11px;color:var(--text-subtle)" id="gh-connected-meta"></div>
+        </div>
+        <span style="font-size:11px;padding:2px 7px;border-radius:20px;background:#2da44e22;color:#2da44e;font-weight:500">Connected</span>
+      </div>
+      <div class="gh-status" id="gh-status-connected"></div>
+      <div class="modal-actions">
+        <button class="btn" style="color:#cf222e;border-color:#cf222e33" onclick="disconnectGitHub()">Disconnect</button>
+        <button class="btn" onclick="closeGhModal()">Close</button>
+        <button class="btn btn-primary" id="gh-resync-btn" onclick="loadGitHub(true)">Re-sync all years</button>
+      </div>
+    </div>
+
+    <!-- Setup state -->
+    <div id="gh-setup-view">
+      <div class="modal-sub">Imports all your contribution history from GitHub</div>
+      <div class="gh-status" id="gh-status"></div>
+      <label class="form-label" for="gh-username">GitHub username</label>
+      <input type="text" class="form-input" id="gh-username" placeholder="e.g. octocat" autocomplete="off" spellcheck="false">
+      <label class="form-label" for="gh-token">Personal Access Token</label>
+      <input type="password" class="form-input" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" autocomplete="off">
+      <p class="form-note">Required for the GitHub GraphQL API. Generate one at GitHub → Settings → Developer settings → Personal access tokens. Only <code>read:user</code> scope needed. Stored in your browser only.</p>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeGhModal()">Cancel</button>
+        <button class="btn btn-primary" id="gh-load-btn" onclick="loadGitHub(false)">Connect &amp; import all</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1061,42 +1083,110 @@ function confirmAddYear() {
 }
 
 /* GitHub Modal */
-function openGhModal() { document.getElementById('gh-modal').classList.add('open'); document.getElementById('gh-status').style.display='none'; }
+function openGhModal() {
+  const connected = !!state.ghUsername;
+  document.getElementById('gh-connected-view').style.display = connected ? '' : 'none';
+  document.getElementById('gh-setup-view').style.display    = connected ? 'none' : '';
+  if (connected) {
+    document.getElementById('gh-connected-name').textContent = '@' + state.ghUsername;
+    document.getElementById('gh-connected-meta').textContent = state.ghSyncedAt ? 'Last synced ' + new Date(state.ghSyncedAt).toLocaleDateString() : 'Not synced yet';
+    document.getElementById('gh-status-connected').style.display = 'none';
+  } else {
+    document.getElementById('gh-status').style.display = 'none';
+  }
+  document.getElementById('gh-modal').classList.add('open');
+}
 function closeGhModal() { document.getElementById('gh-modal').classList.remove('open'); }
-function setGhStatus(msg, type) {
-  const el = document.getElementById('gh-status');
+
+function setGhStatus(msg, type, connected) {
+  const id = connected ? 'gh-status-connected' : 'gh-status';
+  const el = document.getElementById(id);
   el.textContent = msg; el.className = 'gh-status ' + type; el.style.display = 'block';
 }
-async function loadGitHub() {
-  const username = document.getElementById('gh-username').value.trim();
+
+function disconnectGitHub() {
+  openConfirm(
+    'Disconnect GitHub?',
+    'This will remove your GitHub connection. Your imported contribution data will remain on the board.',
+    () => {
+      delete state.ghUsername; delete state.ghToken; delete state.ghSyncedAt;
+      save(); closeGhModal();
+    }
+  );
+}
+
+async function fetchYearFromGH(username, year, headers) {
+  const from = `${year}-01-01T00:00:00Z`;
+  const to   = `${year}-12-31T23:59:59Z`;
+  const q = `query{user(login:"${username}"){contributionsCollection(from:"${from}",to:"${to}"){contributionCalendar{totalContributions weeks{contributionDays{date contributionCount}}}}}}`;
+  const res = await fetch('https://api.github.com/graphql', { method:'POST', headers, body: JSON.stringify({ query: q }) });
+  if (res.status === 401) throw new Error('Authentication failed. Check your token.');
+  if (!res.ok) throw new Error(`GitHub API error (${res.status})`);
+  const json = await res.json();
+  if (json.errors) throw new Error(json.errors[0].message);
+  return json.data?.user?.contributionsCollection?.contributionCalendar;
+}
+
+async function loadGitHub(isResync) {
+  const username = isResync ? state.ghUsername : document.getElementById('gh-username').value.trim();
+  const token    = isResync ? state.ghToken    : document.getElementById('gh-token').value.trim();
   if (!username) { alert('Please enter your GitHub username.'); return; }
-  const token = document.getElementById('gh-token').value.trim();
-  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  const btn = document.getElementById('gh-load-btn');
-  btn.textContent = 'Importing…'; btn.disabled = true;
-  setGhStatus('Fetching data from GitHub…', 'info');
+  if (!token)    { alert('A Personal Access Token is required.'); return; }
+
+  const headers = { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer ' + token };
+  const btn = isResync ? document.getElementById('gh-resync-btn') : document.getElementById('gh-load-btn');
+  const origText = btn.textContent;
+  btn.disabled = true;
+
+  const currentYear = new Date().getFullYear();
+  let totalImported = 0, totalContribs = 0, yearsLoaded = [];
+
   try {
-    const from = `${activeYear}-01-01T00:00:00Z`;
-    const to   = `${activeYear}-12-31T23:59:59Z`;
-    const query = `query{user(login:"${username}"){contributionsCollection(from:"${from}",to:"${to}"){contributionCalendar{totalContributions weeks{contributionDays{date contributionCount}}}}}}`;
-    const res = await fetch('https://api.github.com/graphql', { method:'POST', headers, body: JSON.stringify({ query }) });
-    if (res.status === 401) throw new Error('Authentication failed. Check your token.');
-    if (!res.ok) throw new Error(`GitHub API error (${res.status})`);
-    const json = await res.json();
-    if (json.errors) throw new Error(json.errors[0].message);
-    const cal = json.data?.user?.contributionsCollection?.contributionCalendar;
-    if (!cal) throw new Error('User not found or no data available.');
-    let imported = 0;
-    cal.weeks.forEach(w => w.contributionDays.forEach(d => {
-      if (d.contributionCount > 0) { state.data[d.date] = d.contributionCount; imported++; }
-    }));
-    save(); buildGrid(activeYear);
-    setGhStatus(`✓ Imported ${cal.totalContributions} contributions (${imported} active days).`, 'info');
+    /* fetch user info to find first contribution year */
+    const infoQ = `query{user(login:"${username}"){createdAt contributionsCollection{contributionYears}}}`;
+    const infoRes = await fetch('https://api.github.com/graphql', { method:'POST', headers, body: JSON.stringify({ query: infoQ }) });
+    if (!infoRes.ok) throw new Error(`GitHub API error (${infoRes.status})`);
+    const infoJson = await infoRes.json();
+    if (infoJson.errors) throw new Error(infoJson.errors[0].message);
+
+    const contribYears = infoJson.data?.user?.contributionsCollection?.contributionYears || [currentYear];
+    const allYears = [...new Set([...contribYears, ...state.years])].sort((a,b)=>a-b);
+
+    for (const year of allYears) {
+      btn.textContent = `Fetching ${year}…`;
+      setGhStatus(`Importing ${year}… (${yearsLoaded.length + 1}/${allYears.length})`, 'info', isResync);
+      const cal = await fetchYearFromGH(username, year, headers);
+      if (!cal) continue;
+      cal.weeks.forEach(w => w.contributionDays.forEach(d => {
+        if (d.contributionCount > 0) { state.data[d.date] = d.contributionCount; totalImported++; }
+      }));
+      totalContribs += cal.totalContributions;
+      yearsLoaded.push(year);
+      if (!state.years.includes(year) && year <= currentYear) {
+        state.years.push(year); state.years.sort((a,b)=>a-b);
+      }
+    }
+
+    state.ghUsername = username;
+    state.ghToken    = token;
+    state.ghSyncedAt = new Date().toISOString();
+    save(); renderYearTabs(); buildGrid(activeYear);
+
+    const msg = `✓ Synced ${yearsLoaded.length} years — ${totalContribs.toLocaleString()} contributions total`;
+    setGhStatus(msg, 'info', isResync);
+    if (!isResync) {
+      document.getElementById('gh-connected-view').style.display = '';
+      document.getElementById('gh-setup-view').style.display = 'none';
+      document.getElementById('gh-connected-name').textContent = '@' + username;
+      document.getElementById('gh-connected-meta').textContent = 'Just synced';
+      setGhStatus(msg, 'info', true);
+    } else {
+      document.getElementById('gh-connected-meta').textContent = 'Last synced ' + new Date().toLocaleDateString();
+    }
   } catch(e) {
-    setGhStatus('✗ ' + e.message, 'error');
+    setGhStatus('✗ ' + e.message, 'error', isResync);
   } finally {
-    btn.textContent = 'Import contributions'; btn.disabled = false;
+    btn.textContent = origText; btn.disabled = false;
   }
 }
 
