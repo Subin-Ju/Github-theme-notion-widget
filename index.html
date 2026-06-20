@@ -688,6 +688,8 @@
       <button onclick="goSetupStep2()" style="background:none;border:none;color:var(--text-muted);font-size:12px;cursor:pointer;padding:0;margin-bottom:14px;display:flex;align-items:center;gap:4px">← Back</button>
       <h2 style="font-size:16px;margin-bottom:4px">Restore existing data</h2>
       <p style="font-size:12px;color:var(--text-muted);margin-bottom:16px;line-height:1.6">Already used this widget on another device? Enter your Sync Code to restore your data.</p>
+      <label class="form-label" for="setup-master-key-3">Master Key</label>
+      <input type="password" class="form-input" id="setup-master-key-3" placeholder="$2a$10$..." autocomplete="off" spellcheck="false">
       <label class="form-label" for="setup-sync-code">Sync Code</label>
       <input type="text" class="form-input" id="setup-sync-code" placeholder="e.g. 6849f2a3c..." autocomplete="off" spellcheck="false">
       <div class="gh-status" id="setup-status-3"></div>
@@ -1440,21 +1442,24 @@ async function setupWithKey() {
 
 async function restoreFromSyncCode() {
   const s = getSyncState();
-  if (!s.masterKey) { setSetupStatus('Set up your Master Key first.', 'error', 3); return; }
+  const masterKey = s.masterKey
+    || document.getElementById('setup-master-key-3').value.trim()
+    || document.getElementById('setup-master-key').value.trim();
+  if (!masterKey) { setSetupStatus('Please go back and enter your Master Key first.', 'error', 3); return; }
   const binId = document.getElementById('setup-sync-code').value.trim();
   if (!binId) { setSetupStatus('Please enter a Sync Code.', 'error', 3); return; }
   const btn = document.getElementById('setup-restore-btn');
   btn.textContent = 'Restoring…'; btn.disabled = true;
   setSetupStatus('Fetching your data…', 'info', 3);
   try {
-    const record = await pullFromCloud(s.masterKey, binId);
+    const record = await pullFromCloud(masterKey, binId);
     if (record.years) state.years = record.years;
     if (record.data)  state.data  = record.data;
     if (record.theme) state.theme = record.theme;
     if (record.customColors) state.customColors = record.customColors;
     if (record.ghUsername) state.ghUsername = record.ghUsername;
     if (record.ghToken) state.ghToken = record.ghToken;
-    setSyncState({ ...s, binId });
+    setSyncState({ masterKey, binId });
     localStorage.setItem('cb_v2', JSON.stringify(state));
     activeTheme = getThemeColors();
     syncCustomInputs(); renderThemeSwatches(); renderYearTabs(); buildGrid(activeYear);
