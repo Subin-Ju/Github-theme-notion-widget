@@ -1510,6 +1510,54 @@ document.getElementById('setup-step-2').insertAdjacentHTML('beforeend',
   document.getElementById(id).addEventListener('click', function(e) { if (e.target === this) this.classList.remove('open'); });
 });
 
+/* ── URL hash config (cross-device magic) ──
+   After first setup, widget generates a URL like:
+   https://yourpage.com/#key=MASTERKEY&bin=BINID
+   User pastes this back into Notion embed → all devices auto-configure */
+function parseUrlConfig() {
+  const hash = window.location.hash.slice(1);
+  if (!hash) return null;
+  const params = Object.fromEntries(hash.split('&').map(p => p.split('=')));
+  if (params.key && params.bin) return { masterKey: params.key, binId: params.bin };
+  return null;
+}
+
+function buildEmbedUrl(masterKey, binId) {
+  const base = window.location.origin + window.location.pathname;
+  return `${base}#key=${masterKey}&bin=${binId}`;
+}
+
+function showUrlUpdateModal(masterKey, binId) {
+  const url = buildEmbedUrl(masterKey, binId);
+  const existing = document.getElementById('url-update-modal');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.id = 'url-update-modal';
+  el.className = 'modal-overlay open';
+  el.innerHTML = `
+    <div class="modal" style="max-width:420px">
+      <div style="font-size:24px;text-align:center;margin-bottom:12px">✅</div>
+      <h2 style="text-align:center;margin-bottom:6px">One last step!</h2>
+      <p style="font-size:13px;color:var(--text-muted);text-align:center;margin-bottom:18px;line-height:1.6">
+        Copy this URL and <strong>replace your current Notion embed URL</strong> with it.<br>
+        After that, all your devices will sync automatically — no more setup needed.
+      </p>
+      <div style="background:var(--bg-secondary);border:1px solid var(--border-light);border-radius:8px;padding:10px 12px;margin-bottom:14px;display:flex;align-items:center;gap:8px">
+        <code style="font-size:11px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${url}</code>
+        <button class="btn" style="font-size:11px;padding:3px 8px;flex-shrink:0" onclick="
+          navigator.clipboard.writeText('${url}');
+          this.textContent='Copied!';
+          setTimeout(()=>this.textContent='Copy',1500)
+        ">Copy</button>
+      </div>
+      <p style="font-size:11px;color:var(--text-subtle);text-align:center;margin-bottom:16px">Your Master Key is embedded in this URL. Keep it in your private Notion page.</p>
+      <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="this.closest('.modal-overlay').remove()">Got it, let's go!</button>
+    </div>
+  `;
+  document.body.appendChild(el);
+  el.addEventListener('click', function(e) { if (e.target === this) this.remove(); });
+}
+
 /* Init */
 syncCustomInputs();
 renderThemeSwatches();
@@ -1517,28 +1565,78 @@ renderYearTabs();
 buildGrid(activeYear);
 updateSyncBtn();
 
-/* Show setup modal only if not configured */
-if (!getSyncState().masterKey) {
-  document.getElementById('setup-modal').classList.add('open');
-} else {
-  document.getElementById('setup-modal').classList.remove('open');
-  /* Pull latest data from cloud on load */
-  (async () => {
-    const s = getSyncState();
+/* Boot sequence: URL config → localStorage → setup modal */
+(async () => {
+  const urlCfg = parseUrlConfig();
+  const lsCfg  = getSyncState();
+
+  /* Priority 1: URL has config → auto-configure silently */
+  if (urlCfg) {
+    setSyncState(urlCfg);
+    document.getElementById('setup-modal').classList.remove('open');
     try {
-      const record = await pullFromCloud(s.masterKey, s.binId);
-      if (record && record.data) {
-        state.years = record.years || state.years;
-        state.data  = record.data;
-        state.theme = record.theme || state.theme;
-        state.customColors = record.customColors || state.customColors;
+      const record = await pullFromCloud(urlCfg.masterKey, urlCfg.binId);
+      if (record) {
+        if (record.years) state.years = record.years;
+        if (record.data)  state.data  = record.data;
+        if (record.theme) state.theme = record.theme;
+        if (record.customColors) state.customColors = record.customColors;
+        if (record.ghUsername) state.ghUsername = record.ghUsername;
+        if (record.ghToken)    state.ghToken    = record.ghToken;
         localStorage.setItem('cb_v2', JSON.stringify(state));
         activeTheme = getThemeColors();
         syncCustomInputs(); renderThemeSwatches(); renderYearTabs(); buildGrid(activeYear);
       }
     } catch(e) { /* use local data */ }
-  })();
-}
+    updateSyncBtn();
+    return;
+  }
+
+  /* Priority 2: localStorage has config → pull latest */
+  if (lsCfg.masterKey && lsCfg.binId) {
+    document.getElementById('setup-modal').classList.remove('open');
+    try {
+      const record = await pullFromCloud(lsCfg.masterKey, lsCfg.binId);
+      if (record) {
+        if (record.years) state.years = record.years;
+        if (record.data)  state.data  = record.data;
+        if (record.theme) state.theme = record.theme;
+        if (record.customColors) state.customColors = record.customColors;
+        if (record.ghUsername) state.ghUsername = record.ghUsername;
+        if (record.ghToken)    state.ghToken    = record.ghToken;
+        localStorage.setItem('cb_v2', JSON.stringify(state));
+        activeTheme = getThemeColors();
+        syncCustomInputs(); renderThemeSwatches(); renderYearTabs(); buildGrid(activeYear);
+      }
+    } catch(e) { /* use local data */ }
+    updateSyncBtn();
+    return;
+  }
+
+  /* Priority 3: nothing configured → show setup modal */
+  document.getElementById('setup-modal').classList.add('open');
+})();
+
+/* After setup, show URL update prompt */
+const _origSetupWithKey = setupWithKey;
+setupWithKey = async function() {
+  const masterKey = document.getElementById('setup-master-key').value.trim();
+  if (!masterKey) { setSetupStatus('Please enter your Master Key.', 'error'); return; }
+  const btn = document.getElementById('setup-save-btn');
+  btn.textContent = 'Connecting…'; btn.disabled = true;
+  setSetupStatus('Creating your personal storage…', 'info');
+  try {
+    const binId = await createBin(masterKey);
+    setSyncState({ masterKey, binId });
+    document.getElementById('setup-modal').classList.remove('open');
+    updateSyncBtn();
+    showUrlUpdateModal(masterKey, binId);
+  } catch(e) {
+    setSetupStatus('✗ ' + e.message, 'error');
+  } finally {
+    btn.textContent = 'Save & start'; btn.disabled = false;
+  }
+};
 </script>
 </body>
 </html>
