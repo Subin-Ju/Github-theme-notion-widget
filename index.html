@@ -1105,12 +1105,13 @@ function setGhStatus(msg, type, connected) {
 }
 
 function disconnectGitHub() {
+  closeGhModal();
   openConfirm(
     'Disconnect GitHub?',
     'This will remove your GitHub connection. Your imported contribution data will remain on the board.',
     () => {
       delete state.ghUsername; delete state.ghToken; delete state.ghSyncedAt;
-      save(); closeGhModal();
+      save();
     }
   );
 }
