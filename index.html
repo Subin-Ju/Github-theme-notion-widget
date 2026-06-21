@@ -1515,16 +1515,14 @@ document.getElementById('setup-step-2').insertAdjacentHTML('beforeend',
    https://yourpage.com/#key=MASTERKEY&bin=BINID
    User pastes this back into Notion embed → all devices auto-configure */
 function parseUrlConfig() {
-  const hash = window.location.hash.slice(1);
-  if (!hash) return null;
-  const params = Object.fromEntries(hash.split('&').map(p => p.split('=')));
+  const params = Object.fromEntries(new URLSearchParams(window.location.search));
   if (params.key && params.bin) return { masterKey: params.key, binId: params.bin };
   return null;
 }
 
 function buildEmbedUrl(masterKey, binId) {
   const base = window.location.origin + window.location.pathname;
-  return `${base}#key=${masterKey}&bin=${binId}`;
+  return `${base}?key=${encodeURIComponent(masterKey)}&bin=${encodeURIComponent(binId)}`;
 }
 
 function showUrlUpdateModal(masterKey, binId) {
